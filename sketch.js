@@ -9,8 +9,14 @@ let gameOver = false;
 let win = false;
 let gameStarted = false;
 
+// variável do shader
+let faShader;
+
+console.log("Carregando o shader...");
+faShader = loadShader('background.vert', 'background.glsl');
+
 function setup() {
-  createCanvas(800, 600);
+  createCanvas(800, 600, WEBGL);
   showStartScreen();
   resetGame();
 }
@@ -39,17 +45,17 @@ function draw() {
     return;
   }
 
-  // Atualizar e Mostrar a Raquete
+  // Atualiza e mostra a raquete
   paddle.update();
   paddle.show();
 
-  // Atualizar e Mostrar a Bola
+  // Atualiza e mostra a bola
   ball.update();
   ball.checkEdges();
   ball.checkPaddle(paddle);
   ball.show();
 
-  // Atualizar e Mostrar os Tijolos
+  // Atualiza e mostra os tijolos
   for (let i = bricks.length - 1; i >= 0; i--) {
     bricks[i].show();
     if (ball.hits(bricks[i])) {
@@ -59,18 +65,18 @@ function draw() {
     }
   }
 
-  // Verificar Condição de Vitória
+  // Verifica a Condição de Vitória
   if (bricks.length === 0) {
     win = true;
   }
 
-  // Verificar Condição de Derrota (Bola caiu)
+  // Verifica o Condição de Derrota (Bola caiu)
   if (ball.pos.y > height) {
     gameOver = true;
   }
 }
 
-// Reiniciar o jogo ao pressionar a barra de espaço caso tenha terminado, ou iniciar o jogo a partir da tela de início
+// Reinicia o jogo ao pressionar a barra de espaço caso tenha terminado, ou iniciar o jogo a partir da tela de início
 function keyPressed() {
   if (!gameStarted && key === ' ') {
     gameStarted = true;
@@ -91,12 +97,12 @@ function resetGame() {
   ball = new Ball();
   bricks = [];
 
-  // Criar a grade de tijolos
+  // Cria a grade de tijolos
   let brickWidth = width / cols;
   let brickHeight = 25;
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      // Cores alternadas por linha para ficar bonito
+      // Cores alternadas por linha para ficar nice
       let brickColor = color((r * 40) % 255, 100, 255 - (r * 30));
       bricks.push(new Brick(c * brickWidth + 5, r * brickHeight + 60, brickWidth - 10, brickHeight - 5, brickColor));
     }
