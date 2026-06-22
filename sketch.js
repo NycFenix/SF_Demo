@@ -1,7 +1,7 @@
 /* global canvas */
 // Configurações do Jogo
 let paddle;
-let ball;
+let balls;
 let bricks = [];
 let rows = 5;
 let cols = 10;
@@ -9,6 +9,7 @@ let score = 0;
 let gameOver = false;
 let win = false;
 let gameStarted = false;
+// let scoreTextColor = color(0, 230, 230); // Cor padrão do texto de pontuação
 
 // variável do shader
 let faShader;
@@ -37,23 +38,23 @@ function draw() {
   
   background(0, 30, 50); // Cor azul escura sólida de fundo (estética Aero) para limpar os rastros
   // 1. Renderiza o fundo primeiro (usa coordenadas WEBGL padrão, centro é 0,0)
-  //renderAeroBackground();
+  renderAeroBackground();
 
   // 2. Isola o ambiente 2D para os elementos do jogo e HUD
   push();
   // Move o ponto (0,0) do centro da tela para o topo esquerdo (comportamento 2D)
   translate(-width/2, -height/2, 0); 
   
-  drawHUD();
+  
 
   if (checkGameStatus()) {
     pop();
     return;
   }
-  
-  drawTextTest(); // Desenha o texto de teste no centro da tela (para debug do shader)
   updateEntities();
-  
+  drawTextTest(); // Desenha o texto de teste no centro da tela (para debug do shader)
+  drawHUD();
+
   pop();
 }
 
@@ -69,8 +70,23 @@ function drawTextTest() {
   
   // 🔴 ALTERAÇÃO: Utilizando a fonte carregada no preload() com p5.Font para compatibilidade com WEBGL
   textFont(aeroFont); 
-  fill(255); // Adicionado fill branco para o texto contrastar com o retângulo
+  fill(255, 0, 120); // Adicionado fill branco para o texto contrastar com o retângulo
   text("TESTE DE TEXTO", 0, 0);
+  pop();
+}
+
+
+function drawHUD() {
+  push();
+  drawPainelVidro(20, 20, 150, 40);
+  translate(0, 0, 30); // Eleva o HUD levemente acima do plano de fundo para evitar z-fighting
+
+  fill(150, 220, 230);
+  textSize(18);
+  textFont(aeroFont);
+  textAlign(LEFT, CENTER);
+  
+  text("Pontos: " + score, 40, 50); // Ajustado y levemente para centralizar o texto verticalmente no HUD
   pop();
 }
 
@@ -86,16 +102,6 @@ function renderAeroBackground() {
   pop();
 }
 
-function drawHUD() {
-  push();
-  drawPainelVidro(20, 20, 150, 40);
-  fill(255);
-  textSize(18);
-  textFont("Segoe UI", 'Arial');
-  textAlign(LEFT, CENTER);
-  text("Pontos: " + score, 30, 40); // Ajustado y levemente para centralizar o texto verticalmente no HUD
-  pop();
-}
 
 function drawPainelVidro(x, y, w, h) {
   push();
@@ -107,7 +113,7 @@ function drawPainelVidro(x, y, w, h) {
   
   // Brilho reflexivo
   noStroke();
-  fill(255, 255, 255, 80);
+  fill(255, 255, 255, 120);
   beginShape();
   vertex(x+2, y+2);
   vertex(x + w - 2, y + 2);
@@ -119,7 +125,7 @@ function drawPainelVidro(x, y, w, h) {
 
 function checkGameStatus() {
   if(gameOver) {  
-    showEndScreen("FIM DE JOGO", color(255, 100, 100));
+    showEndScreen("FIM DE JOGO!", color(255, 0, 120));
     return true;
   }
 
@@ -175,15 +181,15 @@ function showEndScreen(message, textColor) {
   
   noStroke();
   textAlign(CENTER, CENTER);
-  textFont("Segoe UI", 'Arial');
+  textFont(aeroFont);
   
   // Mensagem Principal (FIM DE JOGO / VOCÊ VENCEU)
   fill(textColor);
   textSize(42);
-  text(message, 0, -20);
+  text(message, 0, -50);
   
   // Mensagem Secundária
-  fill(255);
+  fill(230, 20, 130);
   textSize(16);
   text("Pressione ESPAÇO para reiniciar", 0, 40);
   
