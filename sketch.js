@@ -1,7 +1,7 @@
 /* global canvas */
 // Configurações do Jogo
 let paddle;
-let balls;
+let balls = [];
 let bricks = [];
 let rows = 5;
 let cols = 10;
@@ -52,7 +52,7 @@ function draw() {
     return;
   }
   updateEntities();
-  drawTextTest(); // Desenha o texto de teste no centro da tela (para debug do shader)
+  // drawTextTest(); // Desenha o texto de teste no centro da tela (para debug do shader)
   drawHUD();
 
   pop();
@@ -141,28 +141,58 @@ function updateEntities() {
   paddle.update();
   paddle.show();
 
-  // Bola
-  ball.update();
-  ball.checkEdges();
-  ball.checkPaddle(paddle);
-  ball.show();
+  // 🔴 ALTERAÇÃO: Loop reverso para atualizar todas as bolas ativas e verificar colisões
+  for (let j = balls.length - 1; j >= 0; j--) {
+    let b = balls[j];
+    b.update();
+    b.checkEdges();
+    b.checkPaddle(paddle);
+    b.show();
 
-  // Tijolos
-  for (let i = bricks.length - 1; i >= 0; i--) {
-    bricks[i].show();
-    if (ball.hits(bricks[i])) {
-      ball.yspeed *= -1;
-      bricks.splice(i, 1);
-      score += 10;
+    // Remove a bola se ela cair abaixo da tela
+    if (b.pos.y > height) {
+      balls.splice(j, 1);
+      continue; 
     }
+
+    // Tijolos
+    for (let i = bricks.length - 1; i >= 0; i--) {
+      bricks[i].show();
+      if (b.hits(bricks[i])) {
+        b.yspeed *= -1;
+        
+        // 🔴 ALTERAÇÃO: Se o tijolo for especial, adiciona 2 novas bolinhas no jogo
+        if (bricks[i].isSpecial) {
+          // Cria duas novas bolas na mesma posição da bola atual, mas com velocidades horizontais opostas
+          let newBall1 = new Ball();
+          newBall1.pos = b.pos.copy();
+          newBall1.xspeed = b.xspeed + random(1, 3);
+          newBall1.yspeed = -abs(b.yspeed);
+
+          // let newBall2 = new Ball();
+          // newBall2.pos = b.pos.copy();
+          // newBall2.xspeed = b.xspeed - random(1, 3);
+          // newBall2.yspeed = -abs(b.yspeed);
+          balls.push(newBall1);
+          // balls.push(newBall1, newBall2);
+        }
+
+        bricks.splice(i, 1);
+        score += 10;
+      }
+    }
+  }
+
+  // Desenha os tijolos restantes que não foram checados no loop das bolas (caso o array de bolas esteja vazio)
+  if (balls.length === 0) {
+    for (let i = 0; i < bricks.length; i++) {
+      bricks[i].show();
+    }
+    gameOver = true; // 🔴 ALTERAÇÃO: O jogo termina apenas quando não restarem mais bolinhas na tela
   }
 
   if (bricks.length === 0) {
     win = true;
-  }
-
-  if (ball.pos.y > height) {
-    gameOver = true;
   }
 }
 
@@ -211,7 +241,9 @@ function resetGame() {
   win = false;
   
   paddle = new Paddle();
-  ball = new Ball();
+  balls = []; // Reinicia o array de bolas
+  balls.push(new Ball()); // Adiciona uma nova bola ao array
+  // ball = new Ball();
   bricks = [];
 
   let brickWidth = (width - 40) / cols;
@@ -229,6 +261,15 @@ function resetGame() {
       bricks.push(new Brick(c * brickWidth + 20, r * brickHeight + 90, brickWidth - 8, brickHeight - 8, corColunas[r % corColunas.length]));
     }
   }
+
+  let specialBricks = 0;
+  while (specialBricks < 7 && bricks.length > 0) {
+    let randIndex = floor(random(bricks.length));
+    if (!bricks[randIndex].isSpecial) {
+      bricks[randIndex].isSpecial = true;
+      specialBricks++;
+    }
+  }
 }
 
 // --- CLASSE DA RAQUETE ---
@@ -237,7 +278,7 @@ class Paddle {
     this.w = 140;
     this.h = 20;
     this.pos = createVector(width / 2 - this.w / 2, height - 50);
-    this.speed = 11;
+    this.speed = 13;
   }
   
   show() {
@@ -326,6 +367,7 @@ class Brick {
     this.w = w;
     this.h = h;
     this.color = c;
+    this.isSpecial = false; 
   }
 
   show() {
@@ -338,6 +380,28 @@ class Brick {
     noStroke();
     fill(255, 255, 255, 70);
     rect(this.x + 1, this.y + 1, this.w - 2, this.h * 0.4, 6, 6, 0, 0);
+
+    if (this.isSpecial) {
+      push();
+      fill(255, 50, 0);
+      noStroke();
+
+      let centerX = this.x + this.w / 2;
+      let centerY = this.y + this.h / 2;
+      
+      translate(centerX, centerY, 1); // Move para o centro do bloco com um pequeno deslocamento em Z
+      
+      beginShape();
+      for (let i = 0; i < 10; i++) {
+        let angle = i * TWO_PI / 10 - HALF_PI;
+        let r = (i % 2 === 0) ? 6 : 2.5; // Raio alternado (ponta externa / vértice interno)
+        let x = cos(angle) * r;
+        let y = sin(angle) * r;
+        vertex(x, y);
+      }
+      endShape(CLOSE);
+      pop();
+    }
     pop();
   }
 }

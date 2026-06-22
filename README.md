@@ -1,1 +1,1 @@
-This project is a course conclusion project for the Visual Computing course from Universidade Federal do Rio de Janeiro (UFRJ). It describes a demo of the hit game Starfox from 1998, totally reconstructed to run on a p5.js script editor
+This project is a course conclusion project for the Visual Computing course from Universidade Federal do Rio de Janeiro (UFRJ). It describes an iteration of the classic game "Breakout" with a Fruitiger Aero Aesthetic. 
