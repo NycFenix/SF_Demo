@@ -1,3 +1,4 @@
+/* global canvas */
 // Configurações do Jogo
 let paddle;
 let ball;
@@ -12,97 +13,59 @@ let gameStarted = false;
 // variável do shader
 let faShader;
 
-// 🟢 CORREÇÃO: Alterado de preLoad para preload (tudo minúsculo para o p5.js reconhecer)
 function preload() {
-  console.log("Carregando o shader..."); // 🟢 CORREÇÃO: Removido o 'F' digitado por engano
+  console.log("Carregando o shader...");
   try {
     faShader = loadShader('background.vert', 'background.glsl');
-
   } catch (error) {
     console.log("Erro ao carregar o shader:", error);
   }
 }
 
-
 function setup() {
   createCanvas(800, 600, WEBGL);
-
-  // 🟢 CORREÇÃO: Bloco do shader de fallback removido completamente conforme solicitado.
-  // Agora o p5.js usará estritamente os arquivos físicos .vert e .glsl.
-  
   resetGame();
 }
 
 function draw() {
-  
+  background(0);
   renderAeroBackground();
-  // Mostrar Pontuação
+
+  // 🔴 CORREÇÃO: Propriedade nativa GL em maiúsculo para desativar o depth test com segurança
+  let gl = this._renderer.GL;
+  if (gl) {
+    gl.disable(gl.DEPTH_TEST);
+  }
+
   push();
-  translate(-width/2, -height/2); // Ajusta a posição para o sistema de coordenadas 2D
+  translate(-width/2, -height/2); // Ajusta a posição para o sistema de coordenadas 2D padrão (0,0 no topo esquerdo)
   drawHUD();
 
   if (checkGameStatus()) {
     pop();
+    if (gl) gl.enable(gl.DEPTH_TEST);
     return;
   }
   
   updateEntities();
   pop();
   
-  // if (gameOver) {
-  //   showEndScreen("FIM DE JOGO", color(255, 50, 50));
-  //   return;
-  // }
-
-  // if (win) {
-  //   showEndScreen("VOCÊ VENCEU!", color(50, 255, 50));
-  //   return;
-  // }
-
-  // // Atualiza e mostra a raquete
-  // paddle.update();
-  // paddle.show();
-
-  // // Atualiza e mostra a bola
-  // ball.update();
-  // ball.checkEdges();
-  // ball.checkPaddle(paddle);
-  // ball.show();
-
-  // // Atualiza e mostra os tijolos
-  // for (let i = bricks.length - 1; i >= 0; i--) {
-  //   bricks[i].show();
-  //   if (ball.hits(bricks[i])) {
-  //     ball.yspeed *= -1; // Inverte a direção vertical da bola
-  //     bricks.splice(i, 1); // Remove o tijolo atingido
-  //     score += 10;
-  //   }
-  // }
-
-  // // Verifica a Condição de Vitória
-  // if (bricks.length === 0) {
-  //   win = true;
-  // }
-
-  // // Verifica o Condição de Derrota (Bola caiu)
-  // if (ball.pos.y > height) {
-  //   gameOver = true;
-  // }
+  if (gl) {
+    gl.enable(gl.DEPTH_TEST);
+  }
 }
 
 // FUNÇÕES DE RENDERIZAÇÃO -------------------------------------------------- 
 
 function renderAeroBackground() {
   push();
-  
   resetMatrix();
   shader(faShader);
   
-  faShader.setUniform("u_resolution",   [width, height]); 
-  faShader.setUniform("u_time", millis() / 1000.0); // Tempo em segundos
-  rect(0, 0, width, height); // Desenha um retângulo que cobre toda a tela
+  faShader.setUniform("u_resolution", [width, height]); 
+  faShader.setUniform("u_time", millis() / 1000.0); 
+  rect(-width/2, -height/2, width, height); 
   resetShader();
-  
   pop();
 }
 
@@ -113,19 +76,19 @@ function drawHUD() {
   textSize(18);
   textFont("Segoe UI", 'Arial');
   textAlign(LEFT, CENTER);
-  text("Pontos: " + score, 30, 30);
+  text("Pontos: " + score, 30, 40); // Ajustado y levemente para centralizar o texto verticalmente no HUD
   pop();
 }
 
 function drawPainelVidro(x, y, w, h) {
   push();
-  stroke(255,255, 255, 180);
+  translate(0, 0 ,1);
+  stroke(255, 255, 255, 180);
   strokeWeight(2);
-  fill(255,255, 255, 60); // Vidro semi-transparente
+  fill(255, 255, 255, 60); // Vidro semi-transparente
   rect(x, y, w, h, 12); // Retângulo com cantos arredondados
   
   // Brilho reflexivo
-  
   noStroke();
   fill(255, 255, 255, 80);
   beginShape();
@@ -155,14 +118,13 @@ function updateEntities() {
   paddle.update();
   paddle.show();
 
-  // Bolda
-
+  // Bola
   ball.update();
   ball.checkEdges();
   ball.checkPaddle(paddle);
   ball.show();
 
-  // Tijolos (Renderiza em ordem reversa para evitar problemas de remoção do array)
+  // Tijolos
   for (let i = bricks.length - 1; i >= 0; i--) {
     bricks[i].show();
     if (ball.hits(bricks[i])) {
@@ -181,44 +143,44 @@ function updateEntities() {
   }
 }
 
-
-
-// function showStartScreen() {
-//   background(20);
-//   textAlign(CENTER, CENTER);
-//   textSize(50);
-//   fill(255);
-//   text("BREAKOUT", width / 2, height / 2 - 20);
-//   textSize(20);
-//   fill(200);
-//   text("Pressione ESPAÇO para começar", width / 2, height / 2 + 40);
-// }
-
 function showEndScreen(message, textColor) {
+  // 🔴 CORREÇÃO: Resetamos a matriz localmente para que o texto não herde distorções 3D
   push();
-  drawPainelVidro(width/2 - 200, height/2 - 80, 400, 160);
+  resetMatrix();
+  
+  // Como resetamos a matriz, (0,0) voltou a ser o centro da tela.
+  // Desenha o painel centralizado usando coordenadas relativas ao centro:
+  drawPainelVidro(-200, -80, 400, 160);
+  
+  // Isola as fontes e aplica uma leve elevação em Z para desgrudar do painel de fundo
+  push();
+  translate(0, 0, 5); 
+  
+  noStroke();
   textAlign(CENTER, CENTER);
-  textSize(50);
+  textFont("Segoe UI", 'Arial');
+  
+  // Mensagem Principal (FIM DE JOGO / VOCÊ VENCEU)
   fill(textColor);
-  text(message, width / 2, height / 2 - 20);
+  textSize(42);
+  text(message, 0, -20);
+  
+  // Mensagem Secundária
+  fill(255);
   textSize(16);
-  fill(50);
-  text("Pressione ESPAÇO para reiniciar", width / 2, height / 2 + 40);
+  text("Pressione ESPAÇO para reiniciar", 0, 40);
+  
+  pop();
   pop();
 }
 
-
-
 // LÓGICA DE CONTROLE --------------------------------------------------
 
-
-// Reinicia o jogo ao pressionar a barra de espaço caso tenha terminado, ou iniciar o jogo a partir da tela de início
 function keyPressed() {
   if ((gameOver || win) && key === ' ')  {
     resetGame();
   }
 }
-
 
 function resetGame() {
   score = 0;
@@ -229,7 +191,6 @@ function resetGame() {
   ball = new Ball();
   bricks = [];
 
-  // Cria a grade de tijolos
   let brickWidth = (width - 40) / cols;
   let brickHeight = 30;
 
@@ -240,10 +201,8 @@ function resetGame() {
     color(255, 100, 0, 220),
   ];
 
-
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      // Cores alternadas por linha para ficar nice
       bricks.push(new Brick(c * brickWidth + 20, r * brickHeight + 90, brickWidth - 8, brickHeight - 8, corColunas[r % corColunas.length]));
     }
   }
@@ -255,26 +214,23 @@ class Paddle {
     this.w = 140;
     this.h = 20;
     this.pos = createVector(width / 2 - this.w / 2, height - 50);
-    this.speed = 10;
+    this.speed = 11;
   }
   
   show() {
-    // fill(0, 200, 255);
-    // noStroke();
-    // rect(this.pos.x, this.pos.y, this.w, this.h, 5); // Cantos arredondados
-    
+    push(); // 🔴 CORREÇÃO: push e pop adicionados para isolar o translate e não quebrar a física do restante do jogo
+    translate(0, 0, 1);
     drawPainelVidro(this.pos.x, this.pos.y, this.w, this.h);
+    pop();
   }
   
   update() {
-    // Movimentação pelas setas do teclado
     if (keyIsDown(LEFT_ARROW)) {
       this.pos.x -= this.speed;
     }
     if (keyIsDown(RIGHT_ARROW)) {
       this.pos.x += this.speed;
     }
-    // Restringir a raquete dentro da tela
     this.pos.x = constrain(this.pos.x, 10, width - this.w-10);
   }
 }
@@ -282,12 +238,10 @@ class Paddle {
 // --- CLASSE DA BOLA ------
 class Ball {
   constructor() {
-    this.r = 12; // Raio
+    this.r = 12;
     this.pos = createVector(width / 2, height -100);
-
-    // Velocidade inicial aleatória para cima
     this.xspeed = random(-5, 5);
-    this.yspeed = -6;
+    this.yspeed = -7;
   }
   
   show() {
@@ -295,8 +249,7 @@ class Ball {
     noStroke();
     fill(0, 180, 255, 200);
     ellipse(this.pos.x, this.pos.y, this.r * 2);
-    // Reflexsizinho
-    fill(255,255, 255, 220);
+    fill(255, 255, 255, 220);
     ellipse(this.pos.x - this.r * 0.3, this.pos.y - this.r * 0.3, this.r * 0.8, this.r * 0.5); 
     pop();
   }
@@ -307,34 +260,29 @@ class Ball {
   }
   
   checkEdges() {
-    // Paredes laterais
     if (this.pos.x - this.r < 0 || this.pos.x + this.r > width) {
       this.xspeed *= -1;
     }
-    // Teto
     if (this.pos.y - this.r < 0) {
       this.yspeed *= -1;
     }
   }
 
-  // Colisão com raquete
   checkPaddle(p) {
     if (this.pos.y + this.r >= p.pos.y && 
         this.pos.y - this.r <= p.pos.y + p.h && 
         this.pos.x >= p.pos.x && 
         this.pos.x <= p.pos.x + p.w) {
       
-      // Controla a direção do rebote baseado em onde a bola bateu na raquete
       let relativeIntersectX = (p.pos.x + (p.w / 2)) - this.pos.x;
       let normalizedIntersectX = relativeIntersectX / (p.w / 2);
-      let bounceAngle = normalizedIntersectX * (PI / 3); // Ângulo máximo de 60 graus
+      let bounceAngle = normalizedIntersectX * (PI / 3);
       
       this.xspeed = -7 * sin(bounceAngle);
       this.yspeed = -7 * cos(bounceAngle);
     }
   }
 
-  // Colisão com os Tijolos (AABB Collision)
   hits(brick) {
     let closestX = constrain(this.pos.x, brick.x, brick.x + brick.w);
     let closestY = constrain(this.pos.y, brick.y, brick.y + brick.h);
@@ -358,22 +306,15 @@ class Brick {
   }
 
   show() {
-    // fill(this.color);
-    // stroke(20); // Linha preta fina separando os tijolos
-    // strokeWeight(2);
-    // rect(this.x, this.y, this.w, this.h, 3);
-
     push();
     stroke(255, 255, 255, 150);
     strokeWeight(1.5);
     fill(this.color);
     rect(this.x, this.y, this.w, this.h, 8);
 
-      // Brilho reflexivo
-
-        noStroke();
-        fill(255, 255, 255, 70);
-        rect(this.x + 1, this.y + 1, this.w - 2, this.h * 0.4, 6, 6, 0, 0);
-        pop();
+    noStroke();
+    fill(255, 255, 255, 70);
+    rect(this.x + 1, this.y + 1, this.w - 2, this.h * 0.4, 6, 6, 0, 0);
+    pop();
   }
 }
