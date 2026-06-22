@@ -16,46 +16,63 @@ let faShader;
 function preload() {
   console.log("Carregando o shader...");
   try {
-    faShader = loadShader('background.vert', 'background.glsl');
+    faShader = loadShader('shaders/background.vert', 'shaders/background.glsl');
   } catch (error) {
     console.log("Erro ao carregar o shader:", error);
   }
+
+  aeroFont = loadFont('font/Areion-Regular.otf')
+  glassShader = loadShader('shaders/glass.vert', 'shaders/glass.frag');
 }
 
 function setup() {
   createCanvas(800, 600, WEBGL);
   resetGame();
+
+
 }
 
 function draw() {
-  background(0);
-  renderAeroBackground();
+  // background(0);
+  
+  background(0, 30, 50); // Cor azul escura sólida de fundo (estética Aero) para limpar os rastros
+  // 1. Renderiza o fundo primeiro (usa coordenadas WEBGL padrão, centro é 0,0)
+  //renderAeroBackground();
 
-  // 🔴 CORREÇÃO: Propriedade nativa GL em maiúsculo para desativar o depth test com segurança
-  let gl = this._renderer.GL;
-  if (gl) {
-    gl.disable(gl.DEPTH_TEST);
-  }
-
+  // 2. Isola o ambiente 2D para os elementos do jogo e HUD
   push();
-  translate(-width/2, -height/2); // Ajusta a posição para o sistema de coordenadas 2D padrão (0,0 no topo esquerdo)
+  // Move o ponto (0,0) do centro da tela para o topo esquerdo (comportamento 2D)
+  translate(-width/2, -height/2, 0); 
+  
   drawHUD();
 
   if (checkGameStatus()) {
     pop();
-    if (gl) gl.enable(gl.DEPTH_TEST);
     return;
   }
   
+  drawTextTest(); // Desenha o texto de teste no centro da tela (para debug do shader)
   updateEntities();
-  pop();
   
-  if (gl) {
-    gl.enable(gl.DEPTH_TEST);
-  }
+  pop();
 }
 
 // FUNÇÕES DE RENDERIZAÇÃO -------------------------------------------------- 
+
+function drawTextTest() {
+  push();
+  resetMatrix(); // 🔴 CORREÇÃO: Resetamos a matriz para evitar distorções 3D no texto
+  translate(0, 0, 30);
+  textSize(32);
+  textAlign(CENTER, CENTER);
+  //rect(-150, -50, 300, 100); // Fundo do texto para melhor visibilidade
+  
+  // 🔴 ALTERAÇÃO: Utilizando a fonte carregada no preload() com p5.Font para compatibilidade com WEBGL
+  textFont(aeroFont); 
+  fill(255); // Adicionado fill branco para o texto contrastar com o retângulo
+  text("TESTE DE TEXTO", 0, 0);
+  pop();
+}
 
 function renderAeroBackground() {
   push();
@@ -101,7 +118,7 @@ function drawPainelVidro(x, y, w, h) {
 }
 
 function checkGameStatus() {
-  if(gameOver) {
+  if(gameOver) {  
     showEndScreen("FIM DE JOGO", color(255, 100, 100));
     return true;
   }
