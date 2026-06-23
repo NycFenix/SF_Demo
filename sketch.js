@@ -1,4 +1,3 @@
-/* global canvas */
 // Configurações do Jogo
 let paddle;
 let balls = [];
@@ -20,9 +19,9 @@ function preload() {
   } catch (error) {
     console.log("Erro ao carregar o shader:", error);
   }
-
+  
   aeroFont = loadFont('font/Areion-Regular.otf')
-  glassShader = loadShader('shaders/glass.vert', 'shaders/glass.frag');
+  // glassShader = loadShader('shaders/glass.vert', 'shaders/glass.frag');
 }
 
 function setup() {
@@ -33,15 +32,14 @@ function setup() {
 }
 
 function draw() {
-  // background(0);
   
-  background(0, 30, 50); // Cor azul escura sólida de fundo (estética Aero) para limpar os rastros
-  // 1. Renderiza o fundo primeiro (usa coordenadas WEBGL padrão, centro é 0,0)
+  //background(0, 30, 50); // Cor azul escura sólida de fundo (estética Aero) para limpar os rastros
+ 
   renderAeroBackground();
 
-  // 2. Isola o ambiente 2D para os elementos do jogo e HUD
+
   push();
-  // Move o ponto (0,0) do centro da tela para o topo esquerdo (comportamento 2D)
+  // Move o ponto (0,0) do centro da tela para o topo esquerdo 
   translate(-width/2, -height/2, 0); 
   
   
@@ -61,13 +59,13 @@ function draw() {
 
 function drawTextTest() {
   push();
-  resetMatrix(); // 🔴 CORREÇÃO: Resetamos a matriz para evitar distorções 3D no texto
+  resetMatrix(); 
   translate(0, 0, 30);
   textSize(32);
   textAlign(CENTER, CENTER);
-  //rect(-150, -50, 300, 100); // Fundo do texto para melhor visibilidade
+
   
-  // 🔴 ALTERAÇÃO: Utilizando a fonte carregada no preload() com p5.Font para compatibilidade com WEBGL
+ 
   textFont(aeroFont); 
   fill(255, 0, 120); // Adicionado fill branco para o texto contrastar com o retângulo
   text("TESTE DE TEXTO", 0, 0);
@@ -146,7 +144,7 @@ function updateEntities() {
   paddle.update();
   paddle.show();
 
-  // 🔴 ALTERAÇÃO: Loop reverso para atualizar todas as bolas ativas e verificar colisões
+ 
   for (let j = balls.length - 1; j >= 0; j--) {
     let b = balls[j];
     b.update();
@@ -166,9 +164,8 @@ function updateEntities() {
       if (b.hits(bricks[i])) {
         b.yspeed *= -1;
         
-        // 🔴 ALTERAÇÃO: Se o tijolo for especial, adiciona 2 novas bolinhas no jogo
         if (bricks[i].isSpecial) {
-          // Cria duas novas bolas na mesma posição da bola atual, mas com velocidades horizontais opostas
+          
           let newBall1 = new Ball();
           newBall1.pos = b.pos.copy();
           newBall1.xspeed = b.xspeed + random(1, 3);
@@ -188,12 +185,12 @@ function updateEntities() {
     }
   }
 
-  // Desenha os tijolos restantes que não foram checados no loop das bolas (caso o array de bolas esteja vazio)
+  // Desenha os tijolos restantes que não foram checados no loop das bolas 
   if (balls.length === 0) {
     for (let i = 0; i < bricks.length; i++) {
       bricks[i].show();
     }
-    gameOver = true; // 🔴 ALTERAÇÃO: O jogo termina apenas quando não restarem mais bolinhas na tela
+    gameOver = true; 
   }
 
   if (bricks.length === 0) {
@@ -202,15 +199,15 @@ function updateEntities() {
 }
 
 function showEndScreen(message, textColor) {
-  // 🔴 CORREÇÃO: Resetamos a matriz localmente para que o texto não herde distorções 3D
+  
   push();
   resetMatrix();
   
-  // Como resetamos a matriz, (0,0) voltou a ser o centro da tela.
-  // Desenha o painel centralizado usando coordenadas relativas ao centro:
+  
+  
   drawPainelVidro(-200, -80, 400, 160, color(255, 255, 255));
   
-  // Isola as fontes e aplica uma leve elevação em Z para desgrudar do painel de fundo
+  
   push();
   translate(0, 0, 5); 
   
@@ -248,7 +245,7 @@ function resetGame() {
   paddle = new Paddle();
   balls = []; // Reinicia o array de bolas
   balls.push(new Ball()); // Adiciona uma nova bola ao array
-  // ball = new Ball();
+
   bricks = [];
 
   let brickWidth = (width - 40) / cols;
@@ -287,7 +284,7 @@ class Paddle {
   }
   
   show() {
-    push(); // 🔴 CORREÇÃO: push e pop adicionados para isolar o translate e não quebrar a física do restante do jogo
+    push();
     translate(0, 0, 1);
     drawPainelVidro(this.pos.x, this.pos.y, this.w, this.h, color(100, 20, 250));
     pop();
@@ -399,7 +396,7 @@ class Brick {
       beginShape();
       for (let i = 0; i < 10; i++) {
         let angle = i * TWO_PI / 10 - HALF_PI;
-        let r = (i % 2 === 0) ? 6 : 2.5; // Raio alternado (ponta externa / vértice interno)
+        let r = (i % 2 === 0) ? 6 : 2.5; 
         let x = cos(angle) * r;
         let y = sin(angle) * r;
         vertex(x, y);
