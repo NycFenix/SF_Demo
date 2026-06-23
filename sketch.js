@@ -9,7 +9,6 @@ let score = 0;
 let gameOver = false;
 let win = false;
 let gameStarted = false;
-// let scoreTextColor = color(0, 230, 230); // Cor padrão do texto de pontuação
 
 // variável do shader
 let faShader;
@@ -78,10 +77,10 @@ function drawTextTest() {
 
 function drawHUD() {
   push();
-  drawPainelVidro(20, 20, 150, 40);
+  drawPainelVidro(20, 20, 170, 40, color(255, 255, 255));
   translate(0, 0, 30); // Eleva o HUD levemente acima do plano de fundo para evitar z-fighting
 
-  fill(150, 220, 230);
+  fill(200, 20, 250);
   textSize(18);
   textFont(aeroFont);
   textAlign(LEFT, CENTER);
@@ -103,23 +102,29 @@ function renderAeroBackground() {
 }
 
 
-function drawPainelVidro(x, y, w, h) {
+function drawPainelVidro(x, y, w, h, color) {
+  let r = red(color);
+  let g = green(color);
+  let b = blue(color);
   push();
   translate(0, 0 ,1);
-  stroke(255, 255, 255, 180);
+  stroke(r, g, b, 180);
   strokeWeight(2);
-  fill(255, 255, 255, 60); // Vidro semi-transparente
-  rect(x, y, w, h, 12); // Retângulo com cantos arredondados
+  fill(r, g, b, 60); // Vidro semi-transparente
+  rect(x, y, w, h, 12); 
   
   // Brilho reflexivo
+  push();
+  translate(0, -1.5, 0);
   noStroke();
-  fill(255, 255, 255, 120);
+  fill(r, g, b, 120);
   beginShape();
-  vertex(x+2, y+2);
-  vertex(x + w - 2, y + 2);
-  vertex(x + w - 2, y + h * 0.4);
+  vertex(x+3, y+3);
+  vertex(x + w - 2  , y + 2);
+  vertex(x + w - 2, y + h * 0.3);
   bezierVertex(x + w * 0.7, y + h * 0.6, x + w * 0.3, y + h * 0.2, x + 2, y + h * 0.4);
   endShape(CLOSE);
+  pop();
   pop();
 }
 
@@ -203,7 +208,7 @@ function showEndScreen(message, textColor) {
   
   // Como resetamos a matriz, (0,0) voltou a ser o centro da tela.
   // Desenha o painel centralizado usando coordenadas relativas ao centro:
-  drawPainelVidro(-200, -80, 400, 160);
+  drawPainelVidro(-200, -80, 400, 160, color(255, 255, 255));
   
   // Isola as fontes e aplica uma leve elevação em Z para desgrudar do painel de fundo
   push();
@@ -284,7 +289,7 @@ class Paddle {
   show() {
     push(); // 🔴 CORREÇÃO: push e pop adicionados para isolar o translate e não quebrar a física do restante do jogo
     translate(0, 0, 1);
-    drawPainelVidro(this.pos.x, this.pos.y, this.w, this.h);
+    drawPainelVidro(this.pos.x, this.pos.y, this.w, this.h, color(100, 20, 250));
     pop();
   }
   
